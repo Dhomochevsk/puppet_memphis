@@ -140,11 +140,17 @@ def map_pose_to_model(keypoints,partes,file_path,SCREEN_WIDTH, SCREEN_HEIGHT):
     # -------------------------------
     # Ajuste del ángulo del torso
     # -------------------------------
-    dx = right_shoulder[0] - left_shoulder[0]
-    dy = right_shoulder[1] - left_shoulder[1]
-    #partes["torso"]["angle"] = math.degrees(math.atan2(dy, dx)) -90 # <-- corregido
-    partes["torso"]["angle"] = math.degrees(math.atan2(dy, dx))*0.9 # <-- corregido
-    
+    # --- Calcular punto medio entre hombros y caderas ---
+    mid_shoulders = ((left_shoulder[0] + right_shoulder[0]) / 2,
+                    (left_shoulder[1] + right_shoulder[1]) / 2)
+    mid_hips = ((left_hip[0] + right_hip[0]) / 2,
+                (left_hip[1] + right_hip[1]) / 2)
+
+    # --- Calcular ángulo entre esos dos puntos ---
+    dx = mid_hips[0] - mid_shoulders[0]
+    dy = mid_hips[1] - mid_shoulders[1]
+    partes["torso"]["angle"] = math.degrees(math.atan2(dy, -dx))
+
 
 
     # ---- EXTREMIDADES ----

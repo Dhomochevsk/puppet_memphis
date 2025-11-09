@@ -81,6 +81,46 @@ partes = {
 
 
 # --------------------------
+# Detección de parte clickeada (prioridad según orden visual)
+# --------------------------
+def detectar_parte_click(partes, pos, pixel_perfect=False):
+    """
+    Recorre las partes en orden inverso y devuelve la clave de la primera
+    parte cuyo rect colisiona con pos. Si pixel_perfect=True, además
+    verifica que el píxel en la imagen rotada no sea transparente.
+    """
+    # Recorre en orden inverso para dar prioridad a las partes que se dibujan encima
+    for key, parte in reversed(list(partes.items())):
+        rect = parte.get("rect")
+        if rect and rect.collidepoint(pos):
+            if not pixel_perfect:
+                return key
+            # pixel-perfect: construir la imagen rotada y comprobar la máscara
+            try:
+                # Rotar la imagen exactamente como se dibuja: angulo usado en cargar_imagen
+                ang = parte.get("angle", 0)
+                rotated = pygame.transform.rotate(parte["imagen"], ang - 90)
+                # coords locales dentro del rect
+                local_x = int(pos[0] - rect.left)
+                local_y = int(pos[1] - rect.top)
+                # Si las coordenadas están dentro del tamaño de la imagen rotada
+                w, h = rotated.get_size()
+                if 0 <= local_x < w and 0 <= local_y < h:
+                    mask = pygame.mask.from_surface(rotated)
+                    if mask.get_at((local_x, local_y)):
+                        return key
+                    else:
+                        # píxel transparente => no cuenta como colisión
+                        continue
+                else:
+                    continue
+            except Exception as e:
+                # Si algo falla, de todas formas tomar la colisión por rect
+                return key
+    return None
+
+
+# --------------------------
 # Guardar posiciones iniciales de todas las partes
 # --------------------------
 posiciones_iniciales = {}
@@ -550,20 +590,21 @@ while run:
 
 
                 # --- Selección de parte para MOVER ---
-                for key, parte in partes.items():
-                    if parte["rect"] and parte["rect"].collidepoint(event.pos):
-                        parte_activa = key
-                        parte["modo"] = "mover"
-                        offset_click = (event.pos[0] - parte["pos"][0], event.pos[1] - parte["pos"][1])
-                        break
+                # --- Selección de parte para MOVER (con prioridad visual) ---
+                seleccion = detectar_parte_click(partes, event.pos, pixel_perfect=False)  # <-- poner True si quieres pixel-perfect
+                if seleccion:
+                    parte_activa = seleccion
+                    partes[parte_activa]["modo"] = "mover"
+                    offset_click = (event.pos[0] - partes[parte_activa]["pos"][0],
+                                    event.pos[1] - partes[parte_activa]["pos"][1])
+
 
             # --- BOTÓN DERECHO -> ROTAR ---
             elif event.button == 3:
-                for key, parte in partes.items():
-                    if parte["rect"] and parte["rect"].collidepoint(event.pos): 
-                        parte_activa = key
-                        parte["modo"] = "rotar"
-                        break
+                seleccion = detectar_parte_click(partes, event.pos, pixel_perfect=False)
+                if seleccion:
+                    parte_activa = seleccion
+                    partes[parte_activa]["modo"] = "rotar"
 
 
         elif event.type == pygame.MOUSEBUTTONUP:
