@@ -19,9 +19,12 @@ pygame.init()
 # pantalla
 SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Rotación múltiple con pivotes internos + postura")
+pygame.display.set_caption("Puppet Memphis")
+icon = pygame.image.load("./icons/puppet_icon.png")  # Ruta a tu ícono
+pygame.display.set_icon(icon)
 
 # colores
+
 BG = (200, 200, 200)
 WHITE = (255, 255, 255)
 
@@ -52,6 +55,18 @@ turret_original7 = pygame.image.load(f"./models/{skin_folder}/piernaIzquierda2.p
 torso_img = pygame.image.load(f"./models/{skin_folder}/faces/torzo00.png").convert_alpha()
 
 
+imagen_add_icon = pygame.image.load("./icons/icon_g.png").convert_alpha()
+imagen_add_icon = pygame.transform.scale(imagen_add_icon, (280, 260))
+
+# Cargar iconos (asegúrate de que las rutas existan)
+icon_reload = pygame.image.load("./icons/reload.png").convert_alpha()
+icon_skin = pygame.image.load("./icons/skin.png").convert_alpha()
+icon_puppet = pygame.image.load("./icons/puppet_icon.png").convert_alpha()
+
+# Escalar si son muy grandes (opcional, ajusta el tamaño a tus botones)
+icon_reload = pygame.transform.smoothscale(icon_reload, (40, 40))
+icon_skin = pygame.transform.smoothscale(icon_skin, (40, 40))
+icon_puppet = pygame.transform.smoothscale(icon_puppet, (40, 40))
 
 
 # diccionario con todas las partes
@@ -168,9 +183,9 @@ def draw_buttons(destino, buttons, mouse_pos):
     # --- Dibuja botón Guardar ---
     for btn in buttons:
         btn["rect"].y = 450
-        color = (100, 170, 255) if btn["rect"].collidepoint(mouse_pos) else (180, 180, 180)
+        color = (198, 198, 198) if btn["rect"].collidepoint(mouse_pos) else (243, 243, 243)
         pygame.draw.rect(destino, color, btn["rect"], border_radius=10)
-        pygame.draw.rect(destino, BLACK, btn["rect"], 2, border_radius=10)
+        pygame.draw.rect(destino, (198, 198, 198), btn["rect"], 2, border_radius=2)
         text = font.render(btn["label"], True, BLACK)
         destino.blit(text, (btn["rect"].centerx - text.get_width()//2,
                             btn["rect"].centery - text.get_height()//2))
@@ -328,6 +343,22 @@ while run:
     # ------------------------------
     left_rect = pygame.Rect(0, 0, int(SCREEN_WIDTH*0.6), SCREEN_HEIGHT)
     pygame.draw.rect(screen, WHITE, left_rect)
+    
+    # Margen deseado
+    margen_izq = 10
+    margen_inf = 15
+
+    # Crear un nuevo rectángulo más pequeño
+    borde_rect = pygame.Rect(
+        left_rect.x + margen_izq,
+        left_rect.y +5,
+        left_rect.width - margen_izq,
+        left_rect.height - margen_inf
+    )
+
+    # Dibujar el borde negro
+    pygame.draw.rect(screen, (168, 168, 168), borde_rect, 1)
+
 
     # Dibujar imagen de fondo si existe
     if 'imagen_fondo' in globals() and imagen_fondo:
@@ -347,26 +378,37 @@ while run:
         for i in range(3)
     ]
 
+    icons = [icon_reload, icon_skin, icon_puppet]
+
     for i, rect in enumerate(botones_cuadrados):
-        pygame.draw.rect(screen, (150, 150, 255), rect)
-        pygame.draw.rect(screen, BLACK, rect, 2)
-        texto = font.render(f"B{i+1}", True, BLACK)
-        screen.blit(texto, (rect.centerx - texto.get_width()//2, rect.centery - texto.get_height()//2))
+        pygame.draw.rect(screen, (243, 243, 243), rect)
+        pygame.draw.rect(screen, (198, 198, 198), rect, 2)
+        
+        # Obtener el icono correspondiente
+        icon = icons[i]
+        icon_rect = icon.get_rect(center=rect.center)
+        screen.blit(icon, icon_rect)
+
 
     # ------------------------------
     # Otros elementos (cuerpo, derecha, drop area, botones)
     # ------------------------------
     dibujar_cuerpo(partes, parte_activa, screen, mouse_pos)
 
-    pygame.draw.rect(screen, (230, 230, 230), right_rect)
+#panel derecho
+    pygame.draw.rect(screen, (255, 255, 255), right_rect)
     top_square = pygame.Rect(right_rect.x + 20, 20, right_rect.width - 40, right_rect.height//2 - 40)
-    pygame.draw.rect(screen, WHITE, top_square)
-    pygame.draw.rect(screen, BLACK, top_square, 2)
+    #pygame.draw.rect(screen, WHITE, top_square)
+    #pygame.draw.rect(screen, BLACK, top_square, 2)
 
-    pygame.draw.rect(screen, (180,180,180), DROP_AREA, border_radius=8)
-    pygame.draw.rect(screen, (100,100,100), DROP_AREA, 3, border_radius=8)
-    txt = font.render("Arrastra aquí una imagen", True, (50,50,50))
-    screen.blit(txt, (DROP_AREA.x + 20, DROP_AREA.y + DROP_AREA.height//2 - 10))
+    #pygame.draw.rect(screen, (239, 241, 245), DROP_AREA, border_radius=8)
+    pygame.draw.rect(screen, (243, 243, 243), DROP_AREA, border_radius=0)
+    pygame.draw.rect(screen, (168, 168, 168), DROP_AREA, 2, border_radius=2)
+
+
+
+
+    screen.blit(imagen_add_icon, (DROP_AREA.x , DROP_AREA.y))
     if image_preview:
         img_rect = image_preview.get_rect(center=DROP_AREA.center)
         screen.blit(image_preview, img_rect.topleft)
@@ -390,12 +432,13 @@ while run:
         for i, skin in enumerate(skins):
             x = start_x + i * spacing
             thumb_rect = pygame.Rect(x, start_y, *skin_thumbnail_size)
-            pygame.draw.rect(screen, (220, 220, 220), thumb_rect, border_radius=6)
-            pygame.draw.rect(screen, BLACK, thumb_rect, 2, border_radius=6)
+            pygame.draw.rect(screen, (243, 243, 243), thumb_rect, border_radius=6)
+            pygame.draw.rect(screen, (198, 198, 198), thumb_rect, 2, border_radius=6)
             screen.blit(skin["image"], thumb_rect.topleft)
 
             # Guardar rectángulo y skin para clic
             skin_thumbnails_rects.append((thumb_rect, skin))
+        
 
 
      # ------------------------------
@@ -425,11 +468,22 @@ while run:
             thumb_rect = pygame.Rect(x, y, *face_thumbnail_size)
 
             # Dibujar fondo y borde
-            pygame.draw.rect(screen, (220, 220, 220), thumb_rect, border_radius=6)
-            pygame.draw.rect(screen, (0, 0, 0), thumb_rect, 2, border_radius=6)
+            pygame.draw.rect(screen, (243, 243, 243), thumb_rect, border_radius=6)
+            pygame.draw.rect(screen, (198, 198, 198), thumb_rect, 2, border_radius=6)
 
             # Dibujar imagen
-            screen.blit(face["image"], thumb_rect.topleft)
+            image_scaled = pygame.transform.smoothscale(
+                face["image"],
+                (
+                    int(face["image"].get_width() * 0.9),
+                    int(face["image"].get_height() * 0.9)
+                )
+            )
+
+            scaled_rect = image_scaled.get_rect(center=thumb_rect.center)
+
+            # Dibujar la imagen escalada
+            screen.blit(image_scaled, scaled_rect.topleft)
 
             # Guardar rectángulo y face
             face_thumbnails_rects.append((thumb_rect, face))
@@ -535,6 +589,7 @@ while run:
 
                             carga_expresiones(faces_dir,faces,face_thumbnail_size)
 
+                            skin_menu_visible = False
                             break
 
 
@@ -551,6 +606,7 @@ while run:
                             base_path = os.path.join(skins_dir, skin_folder)
                             partes["torso"]["imagen"] = pygame.image.load(face["path"]).convert_alpha()
 
+                            face_menu_visible = False
                             break
 
 
