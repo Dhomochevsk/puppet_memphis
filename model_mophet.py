@@ -226,6 +226,9 @@ def dibujar_cuerpo(partes, parte_activa, destino, mouse_pos):
     coordenadas_verdes.clear()
     torso = partes["torso"]
 
+    # Surface temporal con canal alfa (donde se dibujan los puntos invisibles)
+    puntos_surface = pygame.Surface(destino.get_size(), pygame.SRCALPHA)
+
     # Rotar torso si está activo
     if parte_activa == "torso" and torso["modo"] == "rotar":
         rel_x = mouse_pos[0] - torso["pos"][0]
@@ -256,7 +259,7 @@ def dibujar_cuerpo(partes, parte_activa, destino, mouse_pos):
     for esquina in esquinas:
         rotada = esquina.rotate(-(torso["angle"] - 90))
         ex, ey = pivot_x + rotada.x, pivot_y + rotada.y
-        pygame.draw.circle(destino, (0, 255, 0), (int(ex), int(ey)), 5)
+        pygame.draw.circle(puntos_surface, (0, 255, 0, 0), (int(ex), int(ey)), 5)
         coordenadas_verdes.append((ex, ey))
 
     # Actualizar posiciones iniciales de brazos y piernas 1
@@ -267,7 +270,7 @@ def dibujar_cuerpo(partes, parte_activa, destino, mouse_pos):
         partes["piernad1"]["pos"] = list(coordenadas_verdes[3])
 
     # Conectar las partes 2 a las 1 mediante sus puntos relativos
-    conexiones = {"brazod2":"brazod1","brazoi2":"brazoi1","piernad2":"piernad1","piernai2":"piernai1"}
+    conexiones = {"brazod2": "brazod1", "brazoi2": "brazoi1", "piernad2": "piernad1", "piernai2": "piernai1"}
     for key2, parte2 in partes.items():
         if key2 in conexiones:
             parte1 = partes[conexiones[key2]]
@@ -300,23 +303,27 @@ def dibujar_cuerpo(partes, parte_activa, destino, mouse_pos):
         )
         parte["rect"] = rect
 
-        # Dibujar pivotes y puntos relativos
+        # Dibujar pivotes y puntos relativos en la surface transparente
         bx, by = parte["pos"]
-        if key.startswith(("brazod","brazoi","pierna","piernai")):
-            pygame.draw.circle(destino, (0, 0, 255), (int(bx), int(by)), 5)
+        if key.startswith(("brazod", "brazoi", "pierna", "piernai")):
+            pygame.draw.circle(puntos_surface, (0, 0, 255, 0), (int(bx), int(by)), 5)
             if "punto_rel" in parte:
                 rel = pygame.math.Vector2(parte["punto_rel"])
                 rel_rot = rel.rotate(-(parte["angle"] - 90))
                 px, py = bx + rel_rot.x, by + rel_rot.y
-                pygame.draw.circle(destino, (255, 0, 0), (int(px), int(py)), 5)
+                pygame.draw.circle(puntos_surface, (255, 0, 0, 0), (int(px), int(py)), 5)
 
         if key.endswith("2") and "punto_verde" in parte:
             rel = pygame.math.Vector2(parte["punto_verde"])
             rel_rot = rel.rotate(-(parte["angle"] - 90))
             vx, vy = parte["pos"][0] + rel_rot.x, parte["pos"][1] + rel_rot.y
-            pygame.draw.circle(destino, (0, 255, 0), (int(vx), int(vy)), 5)
+            pygame.draw.circle(puntos_surface, (0, 255, 0, 0), (int(vx), int(vy)), 5)
 
         # Resaltar parte activa
         if parte_activa == key:
             pygame.draw.rect(destino, (255, 0, 0), rect, 3)
+
+    # Combinar la capa (aunque es invisible)
+    destino.blit(puntos_surface, (0, 0))
+
 

@@ -11,6 +11,8 @@ import tkinter as tk
 from tkinter import filedialog
 
 from model_mophet import *
+import launcher
+import datetime
 
 os.chdir(os.path.dirname(__file__))
 
@@ -334,355 +336,277 @@ carga_expresiones(faces_dir,faces,face_thumbnail_size)
 face_thumbnails_rects = []
 skin_thumbnails_rects = []  # rectángulos de cada miniatura
 run = True
+
+mostrar_launcher = True
+launcher_iniciado = False
+
 while run:
-    screen.fill(BG)
-    mouse_pos = pygame.mouse.get_pos()
 
     # ------------------------------
-    # Fondo y área izquierda
+    # Mostrar launcher solo una vez
     # ------------------------------
-    left_rect = pygame.Rect(0, 0, int(SCREEN_WIDTH*0.6), SCREEN_HEIGHT)
-    pygame.draw.rect(screen, WHITE, left_rect)
-    
-    # Margen deseado
-    margen_izq = 10
-    margen_inf = 15
+    if mostrar_launcher and not launcher_iniciado:
+        iniciar = launcher.run_launcher()  # ejecuta el launcher
+        launcher_iniciado = True          # ya no volver a mostrar
 
-    # Crear un nuevo rectángulo más pequeño
-    borde_rect = pygame.Rect(
-        left_rect.x + margen_izq,
-        left_rect.y +5,
-        left_rect.width - margen_izq,
-        left_rect.height - margen_inf
-    )
-
-    # Dibujar el borde negro
-    pygame.draw.rect(screen, (168, 168, 168), borde_rect, 1)
-
-
-    # Dibujar imagen de fondo si existe
-    if 'imagen_fondo' in globals() and imagen_fondo:
-        # Escalar imagen al tamaño del área izquierda
-        imagen_redimensionada = pygame.transform.scale(imagen_fondo, (left_rect.width, left_rect.height))
-        screen.blit(imagen_redimensionada, left_rect.topleft)
+        if iniciar:
+            mostrar_launcher = False      # oculta el launcher y continúa al main
 
     # ------------------------------
-    # Botones cuadrados verticales
+    # Interfaz principal
     # ------------------------------
-    square_size = 50
-    padding = 10
-    top_right_x = left_rect.right - square_size - padding
-    top_y = padding
-    botones_cuadrados = [
-        pygame.Rect(top_right_x, top_y + i*(square_size + padding), square_size, square_size)
-        for i in range(3)
-    ]
+    if not mostrar_launcher:
+        screen.fill(BG)
+        mouse_pos = pygame.mouse.get_pos()
 
-    icons = [icon_reload, icon_skin, icon_puppet]
-
-    for i, rect in enumerate(botones_cuadrados):
-        pygame.draw.rect(screen, (243, 243, 243), rect)
-        pygame.draw.rect(screen, (198, 198, 198), rect, 2)
-        
-        # Obtener el icono correspondiente
-        icon = icons[i]
-        icon_rect = icon.get_rect(center=rect.center)
-        screen.blit(icon, icon_rect)
-
-
-    # ------------------------------
-    # Otros elementos (cuerpo, derecha, drop area, botones)
-    # ------------------------------
-    dibujar_cuerpo(partes, parte_activa, screen, mouse_pos)
-
-#panel derecho
-    pygame.draw.rect(screen, (255, 255, 255), right_rect)
-    top_square = pygame.Rect(right_rect.x + 20, 20, right_rect.width - 40, right_rect.height//2 - 40)
-    #pygame.draw.rect(screen, WHITE, top_square)
-    #pygame.draw.rect(screen, BLACK, top_square, 2)
-
-    #pygame.draw.rect(screen, (239, 241, 245), DROP_AREA, border_radius=8)
-    pygame.draw.rect(screen, (243, 243, 243), DROP_AREA, border_radius=0)
-    pygame.draw.rect(screen, (168, 168, 168), DROP_AREA, 2, border_radius=2)
-
-
-
-
-    screen.blit(imagen_add_icon, (DROP_AREA.x , DROP_AREA.y))
-    if image_preview:
-        img_rect = image_preview.get_rect(center=DROP_AREA.center)
-        screen.blit(image_preview, img_rect.topleft)
-        draw_pose_on_image(screen, last_keypoints, DROP_AREA)
-
-    draw_buttons(screen, buttons, mouse_pos)
-
-   
         # ------------------------------
-    # MENÚ DE SKINS: dibujar al final para que quede encima
-    # ------------------------------
-    if skin_menu_visible and skins:
+        # Fondo y área izquierda
+        # ------------------------------
+        left_rect = pygame.Rect(0, 0, int(SCREEN_WIDTH*0.6), SCREEN_HEIGHT)
+        pygame.draw.rect(screen, WHITE, left_rect)
 
-        b2_rect = botones_cuadrados[1]
-        start_x = b2_rect.x
-        start_y = b2_rect.bottom + 10
-        spacing = skin_thumbnail_size[0] + 10
+        margen_izq = 10
+        margen_inf = 15
+        borde_rect = pygame.Rect(
+            left_rect.x + margen_izq,
+            left_rect.y + 5,
+            left_rect.width - margen_izq,
+            left_rect.height - margen_inf
+        )
+        pygame.draw.rect(screen, (168, 168, 168), borde_rect, 1)
 
-        skin_thumbnails_rects.clear()  # limpiar cada frame
+        if 'imagen_fondo' in globals() and imagen_fondo:
+            imagen_redimensionada = pygame.transform.scale(imagen_fondo, (left_rect.width, left_rect.height))
+            screen.blit(imagen_redimensionada, left_rect.topleft)
 
-        for i, skin in enumerate(skins):
-            x = start_x + i * spacing
-            thumb_rect = pygame.Rect(x, start_y, *skin_thumbnail_size)
-            pygame.draw.rect(screen, (243, 243, 243), thumb_rect, border_radius=6)
-            pygame.draw.rect(screen, (198, 198, 198), thumb_rect, 2, border_radius=6)
-            screen.blit(skin["image"], thumb_rect.topleft)
+        # ------------------------------
+        # Botones cuadrados verticales
+        # ------------------------------
+        square_size = 50
+        padding = 10
+        top_right_x = left_rect.right - square_size - padding
+        top_y = padding
+        botones_cuadrados = [
+            pygame.Rect(top_right_x, top_y + i*(square_size + padding), square_size, square_size)
+            for i in range(3)
+        ]
 
-            # Guardar rectángulo y skin para clic
-            skin_thumbnails_rects.append((thumb_rect, skin))
-        
+        icons = [icon_reload, icon_skin, icon_puppet]
 
+        for i, rect in enumerate(botones_cuadrados):
+            pygame.draw.rect(screen, (243, 243, 243), rect)
+            pygame.draw.rect(screen, (198, 198, 198), rect, 2)
+            
+            # Obtener el icono correspondiente
+            icon = icons[i]
+            icon_rect = icon.get_rect(center=rect.center)
+            screen.blit(icon, icon_rect)
 
-     # ------------------------------
-    # MENÚ DE SKINS: dibujar al final para que quede encima
-    # ------------------------------
+        # ------------------------------
+        # Otros elementos (cuerpo, derecha, drop area, botones)
+        # ------------------------------
+        dibujar_cuerpo(partes, parte_activa, screen, mouse_pos)
 
+        # Panel derecho
+        pygame.draw.rect(screen, (255, 255, 255), right_rect)
+        pygame.draw.rect(screen, (243, 243, 243), DROP_AREA, border_radius=0)
+        pygame.draw.rect(screen, (168, 168, 168), DROP_AREA, 2, border_radius=2)
 
+        screen.blit(imagen_add_icon, (DROP_AREA.x , DROP_AREA.y))
+        if image_preview:
+            img_rect = image_preview.get_rect(center=DROP_AREA.center)
+            screen.blit(image_preview, img_rect.topleft)
+            draw_pose_on_image(screen, last_keypoints, DROP_AREA)
 
-    if face_menu_visible and faces:
-        b2_rect = botones_cuadrados[2]
-        start_x = b2_rect.x
-        start_y = b2_rect.bottom + 10
-        spacing_x = face_thumbnail_size[0] + 10
-        spacing_y = face_thumbnail_size[1] + 10
-        max_per_row = 4  # máximo 4 miniaturas por fila
+        draw_buttons(screen, buttons, mouse_pos)
 
-        face_thumbnails_rects.clear()  # limpiar rectángulos previos
+        # ------------------------------
+        # MENÚ DE SKINS
+        # ------------------------------
+        if skin_menu_visible and skins:
+            b2_rect = botones_cuadrados[1]
+            start_x = b2_rect.x
+            start_y = b2_rect.bottom + 10
+            spacing = skin_thumbnail_size[0] + 10
 
-        for i, face in enumerate(faces):
-            # Calcular fila y columna
-            row = i // max_per_row
-            col = i % max_per_row
+            skin_thumbnails_rects.clear()  # limpiar cada frame
 
-            x = start_x + col * spacing_x
-            y = start_y + row * spacing_y
+            for i, skin in enumerate(skins):
+                x = start_x + i * spacing
+                thumb_rect = pygame.Rect(x, start_y, *skin_thumbnail_size)
+                pygame.draw.rect(screen, (243, 243, 243), thumb_rect, border_radius=6)
+                pygame.draw.rect(screen, (198, 198, 198), thumb_rect, 2, border_radius=6)
+                screen.blit(skin["image"], thumb_rect.topleft)
+                skin_thumbnails_rects.append((thumb_rect, skin))
 
-            thumb_rect = pygame.Rect(x, y, *face_thumbnail_size)
+        # ------------------------------
+        # MENÚ DE FACES
+        # ------------------------------
+        if face_menu_visible and faces:
+            b2_rect = botones_cuadrados[2]
+            start_x = b2_rect.x
+            start_y = b2_rect.bottom + 10
+            spacing_x = face_thumbnail_size[0] + 10
+            spacing_y = face_thumbnail_size[1] + 10
+            max_per_row = 4
 
-            # Dibujar fondo y borde
-            pygame.draw.rect(screen, (243, 243, 243), thumb_rect, border_radius=6)
-            pygame.draw.rect(screen, (198, 198, 198), thumb_rect, 2, border_radius=6)
+            face_thumbnails_rects.clear()
 
-            # Dibujar imagen
-            image_scaled = pygame.transform.smoothscale(
-                face["image"],
-                (
-                    int(face["image"].get_width() * 0.9),
-                    int(face["image"].get_height() * 0.9)
+            for i, face in enumerate(faces):
+                row = i // max_per_row
+                col = i % max_per_row
+                x = start_x + col * spacing_x
+                y = start_y + row * spacing_y
+                thumb_rect = pygame.Rect(x, y, *face_thumbnail_size)
+                pygame.draw.rect(screen, (243, 243, 243), thumb_rect, border_radius=6)
+                pygame.draw.rect(screen, (198, 198, 198), thumb_rect, 2, border_radius=6)
+                image_scaled = pygame.transform.smoothscale(
+                    face["image"],
+                    (int(face["image"].get_width() * 0.9),
+                     int(face["image"].get_height() * 0.9))
                 )
-            )
+                scaled_rect = image_scaled.get_rect(center=thumb_rect.center)
+                screen.blit(image_scaled, scaled_rect.topleft)
+                face_thumbnails_rects.append((thumb_rect, face))
 
-            scaled_rect = image_scaled.get_rect(center=thumb_rect.center)
+        # ------------------------------
+        # Eventos
+        # ------------------------------
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
 
-            # Dibujar la imagen escalada
-            screen.blit(image_scaled, scaled_rect.topleft)
+            elif event.type == pygame.DROPFILE:
+                file_path = event.file
+                keypoints = detect_pose(file_path)
+                if keypoints:
+                    map_pose_to_model(keypoints, partes, file_path, SCREEN_WIDTH, SCREEN_HEIGHT)
+                    last_keypoints = keypoints
+                    img_cv2 = cv2.imread(file_path)
+                    h, w, _ = img_cv2.shape
+                    scale_factor = min((DROP_AREA.width-10)/w, (DROP_AREA.height-10)/h)
+                    img_resized = cv2.resize(cv2.cvtColor(img_cv2, cv2.COLOR_BGR2RGB),
+                                             (int(w*scale_factor), int(h*scale_factor)))
+                    image_preview = pygame.image.frombuffer(img_resized.tobytes(), img_resized.shape[:2][::-1], 'RGB')
+                else:
+                    print("No se detectó ninguna postura en la imagen.")
+                    image_preview = None
 
-            # Guardar rectángulo y face
-            face_thumbnails_rects.append((thumb_rect, face))
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:  # clic izquierdo
+                    # Restaurar posiciones si clic en primer botón
+                    if botones_cuadrados[0].collidepoint(event.pos):
+                        for key, pos_dict in posiciones_iniciales.items():
+                            partes[key]["pos"] = pos_dict["pos"][:]
+                            if "angle" in pos_dict:
+                                partes[key]["angle"] = pos_dict["angle"]
+                            if "punto_verde" in pos_dict:
+                                partes[key]["punto_verde"] = pos_dict["punto_verde"]
+                            if "punto_rel" in pos_dict:
+                                partes[key]["punto_rel"] = pos_dict["punto_rel"]
+                        print("Coordenadas restauradas a las iniciales")
 
+                    # Alternar menús
+                    if botones_cuadrados[1].collidepoint(event.pos):
+                        skin_menu_visible = not skin_menu_visible
+                        if not skins:
+                            skin_menu_visible = False
+                    if botones_cuadrados[2].collidepoint(event.pos):
+                        face_menu_visible = not face_menu_visible
+                        if not faces:
+                            face_menu_visible = False
 
+                    # Clic en miniaturas de skins
+                    if skin_menu_visible:
+                        for thumb_rect, skin in skin_thumbnails_rects:
+                            if thumb_rect.collidepoint(event.pos):
+                                folder_name = os.path.basename(os.path.dirname(skin["path"]))
+                                skin_folder = folder_name
+                                base_path = os.path.join(skins_dir, skin_folder)
+                                partes["brazod1"]["imagen"] = pygame.image.load(os.path.join(base_path, "brazoDerecho1.png")).convert_alpha()
+                                partes["brazod2"]["imagen"] = pygame.image.load(os.path.join(base_path, "brazoDerecho2.png")).convert_alpha()
+                                partes["brazoi1"]["imagen"] = pygame.image.load(os.path.join(base_path, "brazoIzquierdo1.png")).convert_alpha()
+                                partes["brazoi2"]["imagen"] = pygame.image.load(os.path.join(base_path, "brazoIzquierdo2.png")).convert_alpha()
+                                partes["piernad1"]["imagen"] = pygame.image.load(os.path.join(base_path, "piernaDerecha1.png")).convert_alpha()
+                                partes["piernad2"]["imagen"] = pygame.image.load(os.path.join(base_path, "piernaDerecha2.png")).convert_alpha()
+                                partes["piernai1"]["imagen"] = pygame.image.load(os.path.join(base_path, "piernaIzquierda1.png")).convert_alpha()
+                                partes["piernai2"]["imagen"] = pygame.image.load(os.path.join(base_path, "piernaIzquierda2.png")).convert_alpha()
+                                partes["torso"]["imagen"] = pygame.image.load(os.path.join(base_path, r"faces\torzo00.png")).convert_alpha()
+                                faces_dir = os.path.join(base_path, "faces")
+                                faces.clear()
+                                carga_expresiones(faces_dir, faces, face_thumbnail_size)
+                                skin_menu_visible = False
+                                break
 
+                    # Clic en miniaturas de faces
+                    if face_menu_visible:
+                        for thumb_rect, face in face_thumbnails_rects:
+                            if thumb_rect.collidepoint(event.pos):
+                                base_path = os.path.join(skins_dir, os.path.basename(os.path.dirname(face["path"])))
+                                partes["torso"]["imagen"] = pygame.image.load(face["path"]).convert_alpha()
+                                face_menu_visible = False
+                                break
+
+                    # Botones laterales (guardar)
+                    for btn in buttons:
+                        if btn["rect"].collidepoint(event.pos):
+                            if btn["action"] == "guardar":
+                                left_rect = pygame.Rect(0, 0, int(SCREEN_WIDTH*0.6), SCREEN_HEIGHT)
+                                if 'imagen_fondo' in globals() and imagen_fondo:
+                                    final_surface = pygame.Surface(left_rect.size)
+                                    fondo_redim = pygame.transform.scale(imagen_fondo, left_rect.size)
+                                    final_surface.blit(fondo_redim, (0, 0))
+                                else:
+                                    final_surface = pygame.Surface(left_rect.size, pygame.SRCALPHA)
+                                mouse_x, mouse_y = pygame.mouse.get_pos()
+                                dibujar_cuerpo(partes, parte_activa, final_surface, (mouse_x - left_rect.x, mouse_y - left_rect.y))
+                                save_dir = os.path.join(os.path.dirname(__file__), "Ilustraciones")
+                                os.makedirs(save_dir, exist_ok=True)
+                                timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                                filename = f"i_{timestamp}.png"
+                                save_path = os.path.join(save_dir, filename)
+                                pygame.image.save(final_surface, save_path)
+                                print(f"Imagen guardada como {save_path}")
+
+                    # Selección de parte para mover
+                    seleccion = detectar_parte_click(partes, event.pos, pixel_perfect=False)
+                    if seleccion:
+                        parte_activa = seleccion
+                        partes[parte_activa]["modo"] = "mover"
+                        offset_click = (event.pos[0] - partes[parte_activa]["pos"][0],
+                                        event.pos[1] - partes[parte_activa]["pos"][1])
+
+                # Botón derecho -> rotar
+                elif event.button == 3:
+                    seleccion = detectar_parte_click(partes, event.pos, pixel_perfect=False)
+                    if seleccion:
+                        parte_activa = seleccion
+                        partes[parte_activa]["modo"] = "rotar"
+
+            elif event.type == pygame.MOUSEBUTTONUP:
+                if event.button in (1, 3) and parte_activa:
+                    partes[parte_activa]["modo"] = None
+                    parte_activa = None
+
+        # Movimiento de arrastre
+        if parte_activa and partes[parte_activa]["modo"] == "mover":
+            partes[parte_activa]["pos"][0] = mouse_pos[0] - offset_click[0]
+            partes[parte_activa]["pos"][1] = mouse_pos[1] - offset_click[1]
 
     # ------------------------------
-    # Eventos
+    # Eventos comunes fuera del launcher/interfaz
     # ------------------------------
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
-        elif event.type == pygame.DROPFILE:
-            file_path = event.file
-
-            # -------------------------------
-            # Rotar imagen y mapear pose
-            # -------------------------------
-            keypoints = detect_pose(file_path)
-            if keypoints:
-
-
-                map_pose_to_model(keypoints,partes,file_path,SCREEN_WIDTH, SCREEN_HEIGHT)
-                
-                last_keypoints = keypoints  # almacenar los puntos para redibujar el esqueleto
-
-
-                # Cargar imagen y rotar 180° antes de mostrar
-                img_cv2 = cv2.imread(file_path)
-                #img_cv2 = cv2.rotate(img_cv2, cv2.ROTATE_180)  # <-- imagen volteada
-
-                h, w, _ = img_cv2.shape
-                scale_factor = min((DROP_AREA.width-10)/w, (DROP_AREA.height-10)/h)
-                img_resized = cv2.resize(cv2.cvtColor(img_cv2, cv2.COLOR_BGR2RGB),
-                                        (int(w*scale_factor), int(h*scale_factor)))
-                image_preview = pygame.image.frombuffer(img_resized.tobytes(), img_resized.shape[:2][::-1], 'RGB')
-
-            else:
-                print("No se detectó ninguna postura en la imagen.")
-                image_preview = None
-
-
-
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:  # clic izquierdo
-                # --- Restaurar posiciones si clic en B1 ---
-
-                if botones_cuadrados[0].collidepoint(event.pos):
-                    
-                    for key, pos_dict in posiciones_iniciales.items():
-                        partes[key]["pos"] = pos_dict["pos"][:]  # copiar la lista de posiciones inicial
-                        
-                        if "angle" in pos_dict:
-                            partes[key]["angle"] = pos_dict["angle"]
-                        
-                        if "punto_verde" in pos_dict:
-                            partes[key]["punto_verde"] = pos_dict["punto_verde"]
-                            print("patata")
-                        if "punto_rel" in pos_dict:
-                            partes[key]["punto_rel"] = pos_dict["punto_rel"]
-                            print("batata")
-                    #coordenadas_verdes = coordenadas_verdes_guardado.copy()
-                    print("Coordenadas restauradas a las iniciales")
-
-
-                if botones_cuadrados[1].collidepoint(event.pos):
-                    skin_menu_visible = not skin_menu_visible
-                    if not skins:
-                        skin_menu_visible = False
-                
-                if botones_cuadrados[2].collidepoint(event.pos):
-                    face_menu_visible = not face_menu_visible
-                    if not faces:
-                        face_menu_visible = False
-
-
-                if skin_menu_visible:
-                    for thumb_rect, skin in skin_thumbnails_rects:
-                        if thumb_rect.collidepoint(event.pos):
-                            folder_name = os.path.basename(os.path.dirname(skin["path"]))
-                            print("Miniatura clickeada:", folder_name)
-                            print("Miniatura clickeada (ruta completa):", skin["path"])
-
-                            skin_folder = folder_name  # actualizar la carpeta de skin
-
-                            # Recargar imágenes de todas las partes desde la nueva carpeta
-                            base_path = os.path.join(skins_dir, skin_folder)
-                            partes["brazod1"]["imagen"] = pygame.image.load(os.path.join(base_path, "brazoDerecho1.png")).convert_alpha()
-                            partes["brazod2"]["imagen"] = pygame.image.load(os.path.join(base_path, "brazoDerecho2.png")).convert_alpha()
-                            partes["brazoi1"]["imagen"] = pygame.image.load(os.path.join(base_path, "brazoIzquierdo1.png")).convert_alpha()
-                            partes["brazoi2"]["imagen"] = pygame.image.load(os.path.join(base_path, "brazoIzquierdo2.png")).convert_alpha()
-                            partes["piernad1"]["imagen"] = pygame.image.load(os.path.join(base_path, "piernaDerecha1.png")).convert_alpha()
-                            partes["piernad2"]["imagen"] = pygame.image.load(os.path.join(base_path, "piernaDerecha2.png")).convert_alpha()
-                            partes["piernai1"]["imagen"] = pygame.image.load(os.path.join(base_path, "piernaIzquierda1.png")).convert_alpha()
-                            partes["piernai2"]["imagen"] = pygame.image.load(os.path.join(base_path, "piernaIzquierda2.png")).convert_alpha()
-
-                            partes["torso"]["imagen"] = pygame.image.load(os.path.join(base_path, r"faces\torzo00.png")).convert_alpha()
-                            
-                            dir_default = os.path.join(r".\models", skin_folder, "faces")
-                            faces_dir = os.path.join(base_path, "faces")
-                            faces.clear()
-
-                            carga_expresiones(faces_dir,faces,face_thumbnail_size)
-
-                            skin_menu_visible = False
-                            break
-
-
-                if face_menu_visible:
-                    for thumb_rect, face in face_thumbnails_rects:
-                        if thumb_rect.collidepoint(event.pos):
-                            folder_name = os.path.basename(os.path.dirname(face["path"]))
-                            print("Miniatura clickeada:", folder_name)
-                            print("Miniatura clickeada (ruta completa):", face["path"])
-
-                            skin_folder = folder_name  # actualizar la carpeta actual del skin
-
-                            # Cargar la face seleccionada como torso
-                            base_path = os.path.join(skins_dir, skin_folder)
-                            partes["torso"]["imagen"] = pygame.image.load(face["path"]).convert_alpha()
-
-                            face_menu_visible = False
-                            break
-
-
-
-
-
-
-
-                # --- Botones laterales (guardar, etc.) ---
-
-
-                for btn in buttons:
-                    if btn["rect"].collidepoint(event.pos):
-                        if btn["action"] == "guardar":
-                            # --- Definir el área ---
-                            left_rect = pygame.Rect(0, 0, int(SCREEN_WIDTH * 0.6), SCREEN_HEIGHT)
-
-                            # --- Crear superficie según haya fondo ---
-                            if 'imagen_fondo' in globals() and imagen_fondo:
-                                # Si hay fondo, superficie normal
-                                final_surface = pygame.Surface(left_rect.size)
-                                # Redimensionar fondo al tamaño del área
-                                fondo_redim = pygame.transform.scale(imagen_fondo, left_rect.size)
-                                final_surface.blit(fondo_redim, (0, 0))
-                            else:
-                                # Si no hay fondo, superficie transparente
-                                final_surface = pygame.Surface(left_rect.size, pygame.SRCALPHA)
-
-                            # --- Dibujar el cuerpo encima ---
-                            mouse_x, mouse_y = pygame.mouse.get_pos()
-                            dibujar_cuerpo(partes, parte_activa,final_surface, (mouse_x - left_rect.x, mouse_y - left_rect.y))
-
-                            # --- Guardar la imagen ---
-                            pygame.image.save(final_surface, "cuerpo_guardado.png")
-
-                            print("Imagen guardada como cuerpo_guardado.png")
-
-
-                # --- Selección de parte para MOVER ---
-                # --- Selección de parte para MOVER (con prioridad visual) ---
-                seleccion = detectar_parte_click(partes, event.pos, pixel_perfect=False)  # <-- poner True si quieres pixel-perfect
-                if seleccion:
-                    parte_activa = seleccion
-                    partes[parte_activa]["modo"] = "mover"
-                    offset_click = (event.pos[0] - partes[parte_activa]["pos"][0],
-                                    event.pos[1] - partes[parte_activa]["pos"][1])
-
-
-            # --- BOTÓN DERECHO -> ROTAR ---
-            elif event.button == 3:
-                seleccion = detectar_parte_click(partes, event.pos, pixel_perfect=False)
-                if seleccion:
-                    parte_activa = seleccion
-                    partes[parte_activa]["modo"] = "rotar"
-
-
-        elif event.type == pygame.MOUSEBUTTONUP:
-            # Soltar cualquier modo
-            if event.button in (1, 3) and parte_activa:
-                partes[parte_activa]["modo"] = None
-                parte_activa = None
-
-
-
-
-
-
-    # --- ARRRASTRE (Mover con botón izquierdo) ---
-    if parte_activa and partes[parte_activa]["modo"] == "mover":
-        partes[parte_activa]["pos"][0] = mouse_pos[0] - offset_click[0]
-        partes[parte_activa]["pos"][1] = mouse_pos[1] - offset_click[1]
-
-    
 
     pygame.display.flip()
     pygame.time.Clock().tick(30)
+
+
+
+
+
 
 pygame.quit()
 sys.exit()
